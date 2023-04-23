@@ -9,6 +9,7 @@ public class PrimeThread extends Thread {
     public static final int ROOT_MAX = (int) Math.sqrt(MAX_VALUE);
     public static final int MAX_SMALL_PRIME = 1 << 20;
 
+    private int threadID;
     private int numTasks;
     private long startIndex;
     private int[] smallPrimes;
@@ -16,7 +17,8 @@ public class PrimeThread extends Thread {
     private boolean[] isPrime;
     private int count,  nPrimes;
 
-    public PrimeThread(int tasksPerThread, long startIndex, int[] smallPrimes, int[] primes, boolean[] isPrime, int count, int nPrimes) {
+    public PrimeThread(int threadID, int tasksPerThread, long startIndex, int[] smallPrimes, int[] primes, boolean[] isPrime, int count, int nPrimes) {
+        this.threadID = threadID;
         this.numTasks = tasksPerThread;
         this.startIndex = startIndex;
         this.smallPrimes = smallPrimes;
@@ -55,6 +57,6 @@ public class PrimeThread extends Thread {
                 }
             }
         }
-        System.out.println("thread " + startIndex + " finished its work.");
+        System.out.println("thread id# " + threadID + " finished its work.");
     } // end of run()
 }// end of PrimeThread.java

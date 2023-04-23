@@ -113,7 +113,7 @@ public class ParallelPrimes {
 
         // check if we've already filled primes, and return if so
         if (nPrimes == minSize) { // if nPrimes was smaller than smallPrimes.length, does that mean primes has already been filled?
-            System.out.println("yikes- primes are filled. returning.");
+            System.out.println("yikes- primes are already filled. returning.");
             return;
         }
 
@@ -136,7 +136,8 @@ public class ParallelPrimes {
                 tasksPerThread = ROOT_MAX - tasksPerThread * i; // it gets the leftover tasks.
             }
             // create and initialize this thread i.
-            threads[i] = new PrimeThread(tasksPerThread, startIndex, smallPrimes, primes, isPrime, count, nPrimes);
+            threads[i] = new PrimeThread(i, tasksPerThread, startIndex, smallPrimes, primes, isPrime, count, nPrimes);
+            System.out.println("the start index for thread id# " + i + "is:  " + startIndex);
             startIndex += tasksPerThread;
             // System.out.println("thread " + i + "created.");
             // initialize each thread with the number of tasks it must conduct, the index for it to write results to, and the shared array.
