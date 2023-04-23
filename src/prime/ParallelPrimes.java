@@ -100,8 +100,11 @@ public class ParallelPrimes {
     public static void optimizedPrimes(int[] primes) {
         System.out.println("starting optimizedPrimes method.");
 
-        // compute small prime values
-        int[] smallPrimes = getSmallPrimes(); // this calls getSmallPrimesUpTo(sqrt of ROOT_MAX), which computes primes via baseline SoE implementation.
+        int numThreads = Runtime.getRuntime().availableProcessors(); // this is equal to the number of processors available to my computer
+        int tasksPerThread = MAX_VALUE / numThreads;
+        // compute small prime values from 0 to tasksPerThread*1.
+        int[] smallPrimes = getSmallPrimesUpTo(tasksPerThread); // this calls getSmallPrimesUpTo(sqrt of ROOT_MAX), which computes primes via baseline SoE implementation.
+
         int nPrimes = primes.length;
 
         // write small primes to primes
@@ -124,22 +127,23 @@ public class ParallelPrimes {
         // partitioning the problem in this way is necessary because
         // we cannot create a boolean array of size MAX_VALUE.
 
-        int numThreads = Runtime.getRuntime().availableProcessors(); // this is equal to the number of processors available to my computer
-        int tasksPerThread = MAX_VALUE / numThreads;
 
         boolean[] isPrime = new boolean[tasksPerThread];
 
-        PrimeThread[] threads = new PrimeThread[numThreads]; // declare an array to store all the threads.
-        long startIndex = ROOT_MAX;
-        for (int i = 0; i < numThreads; i++) { // will initialize numThreads number of threads
-            if (i == numThreads - 1) { // if this is the last thread,
-                tasksPerThread = ROOT_MAX - tasksPerThread * i; // it gets the leftover tasks.
+        // declare an array to store all the threads. numThreads was computed earlier.
+        PrimeThread[] threads = new PrimeThread[numThreads];
+
+        long startIndex = tasksPerThread*1; // prime number from 0 to tasksPerThread*1 has been found already using getSmallPrimesUpTo(tasksPerThread*1).
+        for (int i = 0; i < numThreads; i++) { // initialize numThreads number of threads
+            if (i == numThreads - 1) { // if this is the last thread, it gets the leftover tasks, from tasksPerThread*i up to primes.length (aka nPrimes).
+                tasksPerThread = nPrimes - tasksPerThread * i;
             }
-            // create and initialize this thread i.
+            // create and initialize this i-th thread.
             threads[i] = new PrimeThread(i, tasksPerThread, startIndex, smallPrimes, primes, isPrime, count, nPrimes);
-            System.out.println("the start index for thread id# " + i + "is:  " + startIndex);
+
+            System.out.println("Created thread # " + i + ". Start Index is " + startIndex + ", and its numTasks is "+ tasksPerThread);
+
             startIndex += tasksPerThread;
-            // System.out.println("thread " + i + "created.");
             // initialize each thread with the number of tasks it must conduct, the index for it to write results to, and the shared array.
         }
         for (Thread t : threads) {
