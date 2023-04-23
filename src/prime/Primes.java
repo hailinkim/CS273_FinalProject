@@ -1,19 +1,16 @@
-package prime;
+package prime;// A class for computing primes and other associated tasks.
+// ***DO NOT MODIFY THIS FILE***
 
-import static prime.Primes.baselinePrimes;
-
-public class ParallelPrimes {
-    // replace this string with your team name
-    public static final String TEAM_NAME = "The AMA's";
+public class Primes {
 
     public static final int MAX_VALUE = Integer.MAX_VALUE;
     public static final int N_PRIMES = 105_097_565;
     public static final int ROOT_MAX = (int) Math.sqrt(MAX_VALUE);
     public static final int MAX_SMALL_PRIME = 1 << 20;
 
-    // Use the sieve of Eratosthenes to compute all prime numbers up to max.
-    // The largest allowed value of max is MAX_SMALL_PRIME.
-    private static int[] getSmallPrimesUpTo(int max) {
+    // Use the sieve of Eratosthenes to compute all prime numbers up
+    // to max. The largest allowed value of max is MAX_SMALL_PRIME.
+    public static int[] getSmallPrimesUpTo(int max) {
         // check that the value max is in bounds, and throw an exception if not
         if (max > MAX_SMALL_PRIME) {
             throw new RuntimeException("The value " + max + "exceeds the maximum small prime value (" + MAX_SMALL_PRIME + ")");
@@ -74,10 +71,11 @@ public class ParallelPrimes {
         return getSmallPrimesUpTo(ROOT_MAX);
     }
 
-    // Compute a block of prime values between start and start + isPrime.length.
-    // Specifically, after calling this method
-    // isPrime[i] will be true if and only if start + i is a prime number,
-    // assuming smallPrimes contains all prime numbers up to sqrt(start + isPrime.length).
+    // Compute a block of prime values between start and start +
+    // isPrime.length. Specifically, after calling this method
+    // isPrime[i] will be true if and only if start + i is a prime
+    // number, assuming smallPrimes contains all prime numbers of to
+    // sqrt(start + isPrime.length).
     private static void primeBlock(boolean[] isPrime, int[] smallPrimes, int start) {
 
         // initialize isPrime to be all true
@@ -86,6 +84,7 @@ public class ParallelPrimes {
         }
 
         for (int p : smallPrimes) {
+
             // find the next number >= start that is a multiple of p
             int i = (start % p == 0) ? start : p * (1 + start / p);
             i -= start;
@@ -97,62 +96,41 @@ public class ParallelPrimes {
         }
     }
 
-    public static void optimizedPrimes(int[] primes) {
-        System.out.println("starting optimizedPrimes method.");
+    // Compute the first primes.length prime numbers
+    // and write them sequentially into the array primes.
+    public static void baselinePrimes(int[] primes) {
 
         // compute small prime values
         int[] smallPrimes = getSmallPrimes(); // this calls getSmallPrimesUpTo(sqrt of ROOT_MAX), which computes primes via baseline SoE implementation.
         int nPrimes = primes.length;
 
+
         // write small primes to primes
         int count = 0;
-        int minSize = Math.min(nPrimes, smallPrimes.length); // which is smaller: primes.length, or smallPrimes.length
+        int minSize = Math.min(nPrimes, smallPrimes.length); // which is smaller: primes.length, or smallPrimes.length?
         for (; count < minSize; count++) {
             primes[count] = smallPrimes[count];
         }
 
         // check if we've already filled primes, and return if so
-        if (nPrimes == minSize) { // if nPrimes was smaller than smallPrimes.length, does that mean primes has already been filled?
-            System.out.println("yikes- primes are filled. returning.");
+        if (nPrimes == minSize) {
             return;
         }
 
-        // Apply the sieve of Eratosthenes to find primes.
-        // This procedure partitions the sieving task up into several blocks,
-        // where each block isPrime stores boolean values associated with
-        // ROOT_MAX consecutive numbers. Note that
+        // Apply the sieve of Eratosthenes to find primes. This
+        // procedure partitions the sieving task up into several
+        // blocks, where each block isPrime stores boolean values
+        // associated with ROOT_MAX consecutive numbers. Note that
         // partitioning the problem in this way is necessary because
         // we cannot create a boolean array of size MAX_VALUE.
-
-        int numThreads = Runtime.getRuntime().availableProcessors(); // this is equal to the number of processors available to my computer
-        int tasksPerThread = MAX_VALUE / numThreads;
-
-        boolean[] isPrime = new boolean[tasksPerThread];
-
-        PrimeThread[] threads = new PrimeThread[numThreads]; // declare an array to store all the threads.
-        long startIndex = ROOT_MAX;
-        for (int i = 0; i < numThreads; i++) { // will initialize numThreads number of threads
-            if (i == numThreads - 1) { // if this is the last thread,
-                tasksPerThread = ROOT_MAX - tasksPerThread * i; // it gets the leftover tasks.
-            }
-            // create and initialize this thread i.
-            threads[i] = new PrimeThread(tasksPerThread, startIndex, smallPrimes, primes, isPrime, count, nPrimes);
-            startIndex += tasksPerThread;
-            // System.out.println("thread " + i + "created.");
-            // initialize each thread with the number of tasks it must conduct, the index for it to write results to, and the shared array.
-        }
-        for (Thread t : threads) {
-            t.start();
-        }
-
-        for (Thread t : threads) {
-            try {
-                t.join();
-            } catch (InterruptedException ignored) {
-                // don't care if t was interrupted
+        boolean[] isPrime = new boolean[ROOT_MAX];
+        for (long curBlock = ROOT_MAX; curBlock < MAX_VALUE; curBlock += ROOT_MAX) { // we don't start at curBlock=0 since that's already been populated with getSmallPrimes.
+            primeBlock(isPrime, smallPrimes, (int) curBlock);
+            for (int i = 0; i < isPrime.length && count < nPrimes; i++) {
+                if (isPrime[i]) {
+                    primes[count++] = (int) curBlock + i;
+                }
             }
         }
-        // The code below should be the last line of code in optimized Primes:
-        baselinePrimes(primes); // baselinePrimes quickly returns if we've already filled primes.
-    } // end of optimizedPrimes
+    }
 }

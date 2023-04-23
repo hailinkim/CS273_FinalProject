@@ -26,6 +26,7 @@ public class PrimeTester {
         long start = System.nanoTime();
 
         for (int i = 0; i < TEST_ITERATIONS; i++) {
+            System.out.println("testing optimizedPrimes");
             ParallelPrimes.optimizedPrimes(testPrimes);
         }
 
