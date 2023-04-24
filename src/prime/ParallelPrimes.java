@@ -15,9 +15,9 @@ public class ParallelPrimes {
     // The largest allowed value of max is MAX_SMALL_PRIME.
     private static int[] getSmallPrimesUpTo(int max) {
         // check that the value max is in bounds, and throw an exception if not
-        if (max > MAX_SMALL_PRIME) {
-            throw new RuntimeException("The value " + max + "exceeds the maximum small prime value (" + MAX_SMALL_PRIME + ")");
-        }
+//        if (max > MAX_SMALL_PRIME) {
+//            throw new RuntimeException("The value " + max + "exceeds the maximum small prime value (" + MAX_SMALL_PRIME + ")");
+//        }
 
         // isPrime[i] will be true if and only if i is prime.
         // Initially set isPrime[i] to true for all i >= 2.
@@ -103,7 +103,7 @@ public class ParallelPrimes {
         int numThreads = Runtime.getRuntime().availableProcessors(); // this is equal to the number of processors available to my computer
         int tasksPerThread = MAX_VALUE / numThreads;
         // compute small prime values from 0 to tasksPerThread*1.
-        int[] smallPrimes = getSmallPrimesUpTo(tasksPerThread); // this calls getSmallPrimesUpTo(sqrt of ROOT_MAX), which computes primes via baseline SoE implementation.
+        int[] smallPrimes = getSmallPrimesUpTo((int) Math.sqrt(tasksPerThread)); // this calls getSmallPrimesUpTo(sqrt of ROOT_MAX), which computes primes via baseline SoE implementation.
 
         int nPrimes = primes.length;
 
@@ -133,10 +133,10 @@ public class ParallelPrimes {
         // declare an array to store all the threads. numThreads was computed earlier.
         PrimeThread[] threads = new PrimeThread[numThreads];
 
-        long startIndex = tasksPerThread*1; // prime number from 0 to tasksPerThread*1 has been found already using getSmallPrimesUpTo(tasksPerThread*1).
+        long startIndex = (long) Math.sqrt(tasksPerThread); // prime number from 0 to tasksPerThread*1 has been found already using getSmallPrimesUpTo(tasksPerThread*1).
         for (int i = 0; i < numThreads; i++) { // initialize numThreads number of threads
             if (i == numThreads - 1) { // if this is the last thread, it gets the leftover tasks, from tasksPerThread*i up to primes.length (aka nPrimes).
-                tasksPerThread = nPrimes - tasksPerThread * i;
+                tasksPerThread = Primes.MAX_VALUE - tasksPerThread * i;
             }
             // create and initialize this i-th thread.
             threads[i] = new PrimeThread(i, tasksPerThread, startIndex, smallPrimes, primes, isPrime, count, nPrimes);
