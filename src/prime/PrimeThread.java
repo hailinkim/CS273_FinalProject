@@ -39,6 +39,7 @@ public class PrimeThread extends Thread {
 
             // find the next number >= start that is a multiple of p
             int i = (start % p == 0) ? start : p * (1 + start / p);
+            System.out.println( "prime found " + i);
             i -= start;
 
             while (i < isPrime.length) {
