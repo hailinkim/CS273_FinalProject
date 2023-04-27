@@ -6,28 +6,28 @@ public class Fibonacci {
         DP //dynamic programming
     }
     // A method to compute the Fibonacci sequence using the specified method
-    public static int[] compute(int n, Method m) {
+    public static long[] compute(int n, Method m) {
         switch (m) {
             case RECURSIVE:
                 return computeRecursive(n);
-            case ITERATIVE:
-                return computeIterative(n);
-            case DP:
-                return computeDynamicProgramming(n);
+//            case ITERATIVE:
+//                return computeIterative(n);
+//            case DP:
+//                return computeDynamicProgramming(n);
             default:
                 throw new IllegalArgumentException("Invalid method: " + m);
         }
     }
     // A recursive method to compute the Fibonacci sequence
-    private static int[] computeRecursive(int n) {
-        int[] fib = new int[n];
-        for (int i = 0; i < n; i++) {
+    private static long[] computeRecursive(int n) {
+        long[] fib = new long[n+1];
+        for (int i = 0; i < n+1; i++) {
             fib[i] = fibonacciRecursive(i);
         }
         return fib;
     }
 
-    private static int fibonacciRecursive(int n) {
+    private static long fibonacciRecursive(int n) {
         if (n <= 1) {
             return n;
         } else {
