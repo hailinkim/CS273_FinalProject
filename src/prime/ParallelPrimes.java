@@ -116,6 +116,7 @@ public class ParallelPrimes {
         int blockSize = ROOT_MAX / Runtime.getRuntime().availableProcessors(); // Determine size of prime blocks to be processed
         List<Callable<Void>> tasks = new ArrayList<>(); // Create list of Callable tasks to be executed by threads
 
+//        System.out.println(blockSize);
         // Divide up prime blocks to be processed by threads and add them as Callable tasks
         for (long curBlock = ROOT_MAX; curBlock < MAX_VALUE; curBlock += blockSize) {
             long start = curBlock;
@@ -123,8 +124,8 @@ public class ParallelPrimes {
 
             tasks.add(() -> {
                 boolean[] localIsPrime = new boolean[blockSize]; // Create local array to store primes for current block
-                primeBlock(localIsPrime, smallPrimes, (int) (start - ROOT_MAX)); // Determine primes for current block using primeBlock() method
-                for (int i = 0; i < localIsPrime.length && start + i < end; i++) {
+                primeBlock(localIsPrime, smallPrimes, (int) (start)); //start-ROOT_MAX // Determine primes for current block using primeBlock() method
+                for (int i = 0; i < localIsPrime.length && count.get() < nPrimes; i++) { //start + i < end
                     if (localIsPrime[i]) { // If a prime is found, update output array using AtomicInteger
                         primes[count.getAndIncrement()] = (int) (start + i);
                     }
@@ -132,7 +133,6 @@ public class ParallelPrimes {
                 return null;
             });
         }
-
         ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()); // Create ExecutorService to manage threads
 
         try {
@@ -143,5 +143,4 @@ public class ParallelPrimes {
             executor.shutdown(); // Shutdown ExecutorService
         }
     }
-
 }
