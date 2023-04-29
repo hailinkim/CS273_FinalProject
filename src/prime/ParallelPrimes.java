@@ -97,6 +97,14 @@ public class ParallelPrimes {
             }
         }
     }
+    /*
+    * TO-DO
+    * 1. add executor awaitterminate() and check if it works on angelica's macbook and hpc
+    * 2. fiddle around with chunk sizes e.g. ROOTMAX
+    * 3. changing boolean array (T/F) into an array of bits(0/1) - need to update primeBlock as well
+    * 4. change the atomic integer count into an int
+    * 5. maybe even more optimization?
+    * */
     public static void optimizedPrimes(int[] primes) {
         int[] smallPrimes = getSmallPrimes(); // Get small primes up to square root of max value
         int nPrimes = primes.length;
