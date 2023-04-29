@@ -8,9 +8,8 @@ public class PrimeTester {
 
     public static void main (String[] args) {
         System.out.println("Computing primes up to " + Primes.MAX_VALUE);
-//        System.out.println(Primes.N_PRIMES); 2147483647
-        int[] knownPrimes = new int[5000]; //Primes.N_PRIMES
-        int[] testPrimes = new int[5000]; //Primes.N_PRIMES
+        int[] knownPrimes = new int[Primes.N_PRIMES ]; //Primes.N_PRIMES = 2147483647
+        int[] testPrimes = new int[Primes.N_PRIMES ];
 
         // find known primes using the baseline procedure
         Primes.baselinePrimes(knownPrimes);

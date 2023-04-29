@@ -1,6 +1,7 @@
 package prime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -78,21 +79,18 @@ public class ParallelPrimes {
     // isPrime[i] will be true if and only if start + i is a prime
     // number, assuming smallPrimes contains all prime numbers of to
     // sqrt(start + isPrime.length).
-    private static void primeBlock(boolean[] isPrime, int[] smallPrimes, int start) {
+    private static void primeBlock(BitSet isPrime, int[] smallPrimes, int start) {
 
         // initialize isPrime to be all true
-        for (int i = 0; i < isPrime.length; i++) {
-            isPrime[i] = true;
-        }
+        isPrime.set(0, isPrime.size()-1);
 
         for (int p : smallPrimes) {
-
             // find the next number >= start that is a multiple of p
             int i = (start % p == 0) ? start : p * (1 + start / p);
             i -= start;
 
-            while (i < isPrime.length) {
-                isPrime[i] = false;
+            while (i < isPrime.size()) {
+                isPrime.clear(i);
                 i += p;
             }
         }
@@ -130,13 +128,13 @@ public class ParallelPrimes {
         // Divide up prime blocks to be processed by threads and add them as Callable tasks
         for (long curBlock = ROOT_MAX; curBlock < MAX_VALUE; curBlock += blockSize) {
             long start = curBlock;
-            long end = Math.min(curBlock + blockSize, MAX_VALUE);
+//            long end = Math.min(curBlock + blockSize, MAX_VALUE);
 
             tasks.add(() -> {
-                boolean[] localIsPrime = new boolean[blockSize]; // Create local array to store primes for current block
+                BitSet localIsPrime = new BitSet(blockSize); // Create local array to store primes for current block
                 primeBlock(localIsPrime, smallPrimes, (int) (start)); //start-ROOT_MAX // Determine primes for current block using primeBlock() method
-                for (int i = 0; i < localIsPrime.length && count.get() < nPrimes; i++) { //start + i < end
-                    if (localIsPrime[i]) { // If a prime is found, update output array using AtomicInteger
+                for (int i = 0; i < localIsPrime.size() && count.get() < nPrimes; i++) { //start + i < end
+                    if (localIsPrime.get(i)) { // If a prime is found, update output array using AtomicInteger
                         primes[count.getAndIncrement()] = (int) (start + i);
                     }
                 }
@@ -151,10 +149,21 @@ public class ParallelPrimes {
             throw new RuntimeException(e);
         } finally {
             executor.shutdown(); // Shutdown ExecutorService
+            try {
+                // Wait a while for existing tasks to terminate
+                if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                    // Cancel currently executing tasks forcefully
+                    executor.shutdownNow();
+                    // Wait a while for tasks to respond to being cancelled
+                    if (!executor.awaitTermination(60, TimeUnit.SECONDS))
+                        System.err.println("Pool did not terminate");
+                }
+            } catch (InterruptedException ex) {
+                // (Re-)Cancel if current thread also interrupted
+                executor.shutdownNow();
+                // Preserve interrupt status
+                Thread.currentThread().interrupt();
+            }
         }
-        try{
-            executor.awaitTermination();
-        }
-        //add catch block?
     }
 }
