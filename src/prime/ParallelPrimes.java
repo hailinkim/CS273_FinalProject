@@ -99,7 +99,7 @@ public class ParallelPrimes {
     }
     /*
     * TO-DO
-    * 1. add executor awaitterminate() and check if it works on angelica's macbook and hpc
+    * 1. add the catch block for the awaitterminate() and check if it works on angelica's macbook and hpc
     * 2. fiddle around with chunk sizes e.g. ROOTMAX
     * 3. changing boolean array (T/F) into an array of bits(0/1) - need to update primeBlock as well
     * 4. change the atomic integer count into an int
@@ -150,5 +150,9 @@ public class ParallelPrimes {
         } finally {
             executor.shutdown(); // Shutdown ExecutorService
         }
+        try{
+            executor.awaitTermination();
+        }
+        //add catch block?
     }
 }
