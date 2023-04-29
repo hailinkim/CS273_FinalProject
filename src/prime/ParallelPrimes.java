@@ -106,64 +106,76 @@ public class ParallelPrimes {
     *   - @Angelica optimize primeBlock()
     * */
     public static void optimizedPrimes(int[] primes) {
-        int[] smallPrimes = getSmallPrimes(); // Get small primes up to square root of max value
+        int[] smallPrimes = getSmallPrimes();
         int nPrimes = primes.length;
-        AtomicInteger count = new AtomicInteger(0); // AtomicInteger to handle thread-safe incrementation of count variable
 
+        int count = 0;
         int minSize = Math.min(nPrimes, smallPrimes.length);
-        // Copy small primes into output array and update count variable using AtomicInteger
-        for (int i = 0; i < minSize; i++) {
-            primes[count.getAndIncrement()] = smallPrimes[i];
+        for (; count < minSize; count++) {
+            primes[count] = smallPrimes[count];
         }
 
-        if (nPrimes == minSize) { // If all primes have been found, return
+        if (nPrimes == minSize) {
             return;
         }
 
-        boolean[] isPrime = new boolean[ROOT_MAX]; // Array to store primes up to square root of max value
-        int blockSize = ROOT_MAX / Runtime.getRuntime().availableProcessors(); // Determine size of prime blocks to be processed
-        List<Callable<Void>> tasks = new ArrayList<>(); // Create list of Callable tasks to be executed by threads
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        List<Callable<BitSet>> tasks = new ArrayList<>();
+        int blockSize = ROOT_MAX;
 
-//        System.out.println(blockSize);
-        // Divide up prime blocks to be processed by threads and add them as Callable tasks
         for (long curBlock = ROOT_MAX; curBlock < MAX_VALUE; curBlock += blockSize) {
-            long start = curBlock;
-//            long end = Math.min(curBlock + blockSize, MAX_VALUE);
+            int start = (int) curBlock;
+            Callable<BitSet> task = () -> {
+                BitSet isPrime = new BitSet(blockSize);
+                isPrime.set(0, isPrime.size() - 1);
+                for (int p : smallPrimes) {
+                    // find the next number >= start that is a multiple of p
+                    int i = (start % p == 0) ? start : p * (1 + start / p);
+                    i -= start;
 
-            tasks.add(() -> {
-                BitSet localIsPrime = new BitSet(blockSize); // Create local array to store primes for current block
-                primeBlock(localIsPrime, smallPrimes, (int) (start)); //start-ROOT_MAX // Determine primes for current block using primeBlock() method
-                for (int i = 0; i < localIsPrime.size() && count.get() < nPrimes; i++) { //start + i < end
-                    if (localIsPrime.get(i)) { // If a prime is found, update output array using AtomicInteger
-                        primes[count.getAndIncrement()] = (int) (start + i);
+                    while (i < isPrime.size()) {
+                        isPrime.clear(i);
+                        i += p;
                     }
                 }
-                return null;
-            });
+                return isPrime;
+            };
+            tasks.add(task);
         }
-        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()); // Create ExecutorService to manage threads
-
+        List<Future<BitSet>> futures;
         try {
-            executor.invokeAll(tasks); // Execute all Callable tasks using threads managed by ExecutorService
+            futures = executor.invokeAll(tasks);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
-        } finally {
-            executor.shutdown(); // Shutdown ExecutorService
+        }
+        long curBlock = ROOT_MAX;
+        for (Future<BitSet> future : futures) {
             try {
-                // Wait a while for existing tasks to terminate
-                if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
-                    // Cancel currently executing tasks forcefully
-                    executor.shutdownNow();
-                    // Wait a while for tasks to respond to being cancelled
-                    if (!executor.awaitTermination(60, TimeUnit.SECONDS))
-                        System.err.println("Pool did not terminate");
+                BitSet blockPrime = future.get();
+                for (int i = 0; i < blockPrime.size() && count < nPrimes; i++) {
+                    if(blockPrime.get(i))
+                        primes[count++] = (int) (curBlock + i);
                 }
-            } catch (InterruptedException ex) {
-                // (Re-)Cancel if current thread also interrupted
-                executor.shutdownNow();
-                // Preserve interrupt status
-                Thread.currentThread().interrupt();
+                curBlock+=blockSize;
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
             }
+        }
+        executor.shutdown();
+        try {
+            // Wait a while for existing tasks to terminate
+            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                // Cancel currently executing tasks forcefully
+                executor.shutdownNow();
+                // Wait a while for tasks to respond to being cancelled
+                if (!executor.awaitTermination(60, TimeUnit.SECONDS))
+                    System.err.println("Pool did not terminate");
+            }
+        } catch (InterruptedException ex) {
+            // (Re-)Cancel if current thread also interrupted
+            executor.shutdownNow();
+            // Preserve interrupt status
+            Thread.currentThread().interrupt();
         }
     }
 }
