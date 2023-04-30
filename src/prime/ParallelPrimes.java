@@ -97,11 +97,8 @@ public class ParallelPrimes {
     }
     /*
     * TO-DO
-    * 1. add the catch block for the awaitterminate() and check if it works on angelica's macbook and hpc
-    * 2. fiddle around with chunk sizes e.g. ROOTMAX
-    * 3. changing boolean array (T/F) into an array of bits(0/1) - need to update primeBlock as well
-    * 4. change the atomic integer count into an int
-    * 5. maybe even more optimization?
+    * 1. fiddle around with chunk sizes e.g. ROOTMAX
+    * 2. maybe even more optimization?
     *   - @Ahanu optimize getSmallPrimes()
     *   - @Angelica optimize primeBlock()
     * */
@@ -120,46 +117,28 @@ public class ParallelPrimes {
         }
 
         ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        List<Callable<BitSet>> tasks = new ArrayList<>();
+        List<Future<BitSet>> tasks = new ArrayList<>();
         int blockSize = ROOT_MAX;
 
         for (long curBlock = ROOT_MAX; curBlock < MAX_VALUE; curBlock += blockSize) {
             int start = (int) curBlock;
             Callable<BitSet> task = () -> {
-                BitSet isPrime = new BitSet(blockSize);
-                isPrime.set(0, isPrime.size() - 1);
+                BitSet isPrime = new BitSet(ROOT_MAX);
+                isPrime.set(0, ROOT_MAX, true);
                 for (int p : smallPrimes) {
                     // find the next number >= start that is a multiple of p
                     int i = (start % p == 0) ? start : p * (1 + start / p);
                     i -= start;
 
-                    while (i < isPrime.size()) {
+                    while (i < isPrime.length()) {
                         isPrime.clear(i);
                         i += p;
                     }
                 }
                 return isPrime;
             };
-            tasks.add(task);
-        }
-        List<Future<BitSet>> futures;
-        try {
-            futures = executor.invokeAll(tasks);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        long curBlock = ROOT_MAX;
-        for (Future<BitSet> future : futures) {
-            try {
-                BitSet blockPrime = future.get();
-                for (int i = 0; i < blockPrime.size() && count < nPrimes; i++) {
-                    if(blockPrime.get(i))
-                        primes[count++] = (int) (curBlock + i);
-                }
-                curBlock+=blockSize;
-            } catch (InterruptedException | ExecutionException e) {
-                throw new RuntimeException(e);
-            }
+            Future<BitSet> result = executor.submit(task);
+            tasks.add(result);
         }
         executor.shutdown();
         try {
@@ -177,5 +156,20 @@ public class ParallelPrimes {
             // Preserve interrupt status
             Thread.currentThread().interrupt();
         }
+        long curBlock = ROOT_MAX;
+        for (Future<BitSet> future : tasks) {
+            try {
+                BitSet blockPrime = future.get();
+                for (int i = 0; i < blockPrime.length() && count < nPrimes; i++) {
+                    if(blockPrime.get(i)) {
+                        primes[count++] = (int) (curBlock + i);
+                    }
+                }
+                curBlock+=ROOT_MAX;
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
     }
 }
