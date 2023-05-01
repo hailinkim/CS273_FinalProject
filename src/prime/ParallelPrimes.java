@@ -4,8 +4,6 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-
 
 public class ParallelPrimes {
     public static final String TEAM_NAME = "The AMA's";
@@ -19,13 +17,10 @@ public class ParallelPrimes {
             throw new RuntimeException("The value " + max + "exceeds the maximum small prime value (" + MAX_SMALL_PRIME + ")");
         }
 
-        // isPrime[i] will be true if and only if i is prime.
+        // isPrime[i] will be true if and only if it is prime.
         // Initially set isPrime[i] to true for all i >= 2.
-        boolean[] isPrime = new boolean[max];
-
-        for (int i = 2; i < max; i++) {
-            isPrime[i] = true;
-        }
+        BitSet isPrime = new BitSet(max);
+        isPrime.set(2,max, true);
 
         // Apply the sieve of Eratosthenes to find primes.
         // The procedure iterates over values i = 2, 3,.... Math.sqrt(max).
@@ -34,40 +29,15 @@ public class ParallelPrimes {
         // The procedure terminates once we've examined all values i up to Math.sqrt(max).
         int rootMax = (int) Math.sqrt(max);
         for (int i = 2; i < rootMax; i++) {
-            if (isPrime[i]) {
+            if (isPrime.get(i)) {
                 for (int j = 2 * i; j < max; j += i) {
-                    isPrime[j] = false;
+                    isPrime.clear(j);
                 }
             }
         }
-
-        // Count the number of primes we've found, and put them
-        // sequentially in an appropriately sized array.
-        int count = trueCount(isPrime);
-
-        int[] primes = new int[count];
-        int pIndex = 0;
-
-        for (int i = 2; i < max; i++) {
-            if (isPrime[i]) {
-                primes[pIndex] = i;
-                pIndex++;
-            }
-        }
-
-        return primes;
+        return isPrime.stream().toArray();
     }
 
-    // Count the number of true values in an array of boolean values, arr
-    public static int trueCount(boolean[] arr) {
-        int count = 0;
-        for (int i = 0; i < arr.length; i++) {
-            if (arr[i])
-                count++;
-        }
-
-        return count;
-    }
 
     // Returns an array of all prime numbers up to ROOT_MAX
     public static int[] getSmallPrimes() {
@@ -79,97 +49,90 @@ public class ParallelPrimes {
     // isPrime[i] will be true if and only if start + i is a prime
     // number, assuming smallPrimes contains all prime numbers of to
     // sqrt(start + isPrime.length).
-    private static void primeBlock(BitSet isPrime, int[] smallPrimes, int start) {
+    private static class PrimeTask implements Callable<BitSet> {
+        int[] smallPrimes;
+        int start;
+        int blockSize;
+        public PrimeTask(int[] smallPrimes, int start, int blockSize) {
+            this.smallPrimes = smallPrimes;
+            this.start = start;
+            this.blockSize = blockSize;
+        }
+        @Override
+        public BitSet call() {
+            return primeBlock(smallPrimes, start, blockSize);
+        }
+        private static BitSet primeBlock(int[] smallPrimes, int start, int blockSize) {
+            BitSet isPrime = new BitSet(blockSize);
+            isPrime.set(0, blockSize, true);
+            for (int p : smallPrimes) {
+                // find the next number >= start that is a multiple of p
+                int i = (start % p == 0) ? start : p * (1 + start / p);
+                i -= start;
 
-        // initialize isPrime to be all true
-        isPrime.set(0, isPrime.size()-1);
-
-        for (int p : smallPrimes) {
-            // find the next number >= start that is a multiple of p
-            int i = (start % p == 0) ? start : p * (1 + start / p);
-            i -= start;
-
-            while (i < isPrime.size()) {
-                isPrime.clear(i);
-                i += p;
+                while (i < blockSize) {
+                    isPrime.clear(i);
+                    i += p;
+                }
             }
+            return isPrime;
         }
     }
     /*
-    * TO-DO
-    * 1. fiddle around with chunk sizes e.g. ROOTMAX
-    * 2. maybe even more optimization?
-    *   - @Ahanu optimize getSmallPrimes()
-    *   - @Angelica optimize primeBlock()
-    * */
+     * TO-DO
+     * 1. fiddle around with chunk sizes e.g. ROOTMAX
+     * 2. maybe even more optimization?
+     *   - @Ahanu optimize getSmallPrimes()
+     *   - @Angelica optimize primeBlock()
+     * */
     public static void optimizedPrimes(int[] primes) {
-        int[] smallPrimes = getSmallPrimes();
+        int[] smallPrimes = getSmallPrimesUpTo(ROOT_MAX);
         int nPrimes = primes.length;
-
-        int count = 0;
         int minSize = Math.min(nPrimes, smallPrimes.length);
-        for (; count < minSize; count++) {
-            primes[count] = smallPrimes[count];
-        }
+        int count = minSize;
+        System.arraycopy(smallPrimes, 0, primes, 0, minSize);
 
         if (nPrimes == minSize) {
             return;
         }
 
-        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        List<Future<BitSet>> tasks = new ArrayList<>();
-        int blockSize = ROOT_MAX;
+        ExecutorService executor = Executors.newWorkStealingPool();
+        List<PrimeTask> tasks = new ArrayList<>();
+        long blockSize = ROOT_MAX;
 
         for (long curBlock = ROOT_MAX; curBlock < MAX_VALUE; curBlock += blockSize) {
+            if(curBlock + blockSize > MAX_VALUE)
+                blockSize = MAX_VALUE - curBlock + 1;
             int start = (int) curBlock;
-            Callable<BitSet> task = () -> {
-                BitSet isPrime = new BitSet(ROOT_MAX);
-                isPrime.set(0, ROOT_MAX, true);
-                for (int p : smallPrimes) {
-                    // find the next number >= start that is a multiple of p
-                    int i = (start % p == 0) ? start : p * (1 + start / p);
-                    i -= start;
+            PrimeTask task = new PrimeTask(smallPrimes, start, (int) blockSize);
+            tasks.add(task);
+        }
 
-                    while (i < isPrime.length()) {
-                        isPrime.clear(i);
-                        i += p;
-                    }
-                }
-                return isPrime;
-            };
-            Future<BitSet> result = executor.submit(task);
-            tasks.add(result);
+        List<Future<BitSet>> futures = null;
+        try{
+            futures = executor.invokeAll(tasks);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
+
         executor.shutdown();
-        try {
-            // Wait a while for existing tasks to terminate
-            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
-                // Cancel currently executing tasks forcefully
-                executor.shutdownNow();
-                // Wait a while for tasks to respond to being cancelled
-                if (!executor.awaitTermination(60, TimeUnit.SECONDS))
-                    System.err.println("Pool did not terminate");
-            }
-        } catch (InterruptedException ex) {
-            // (Re-)Cancel if current thread also interrupted
-            executor.shutdownNow();
-            // Preserve interrupt status
-            Thread.currentThread().interrupt();
-        }
+
+        //copy the results into the primes array
         long curBlock = ROOT_MAX;
-        for (Future<BitSet> future : tasks) {
-            try {
+        blockSize = ROOT_MAX;
+        for(Future<BitSet> future:futures){
+            try{
                 BitSet blockPrime = future.get();
-                for (int i = 0; i < blockPrime.length() && count < nPrimes; i++) {
-                    if(blockPrime.get(i)) {
-                        primes[count++] = (int) (curBlock + i);
-                    }
-                }
-                curBlock+=ROOT_MAX;
-            } catch (InterruptedException | ExecutionException e) {
+                long finalCurBlock = curBlock;
+                //add curBlock to the index of true bits
+                int[] result = Arrays.stream(blockPrime.stream().toArray()).map(i -> i + (int) finalCurBlock).toArray();
+                //copy the results from the current block to the primes array
+                System.arraycopy(result, 0, primes, count, result.length);
+                curBlock += blockSize;
+                count += result.length;
+            } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
-
     }
 }
