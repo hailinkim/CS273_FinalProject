@@ -49,35 +49,7 @@ public class ParallelPrimes {
     // isPrime[i] will be true if and only if start + i is a prime
     // number, assuming smallPrimes contains all prime numbers of to
     // sqrt(start + isPrime.length).
-    private static class PrimeTask implements Callable<BitSet> {
-        int[] smallPrimes;
-        int start;
-        int blockSize;
-        public PrimeTask(int[] smallPrimes, int start, int blockSize) {
-            this.smallPrimes = smallPrimes;
-            this.start = start;
-            this.blockSize = blockSize;
-        }
-        @Override
-        public BitSet call() {
-            return primeBlock(smallPrimes, start, blockSize);
-        }
-        private static BitSet primeBlock(int[] smallPrimes, int start, int blockSize) {
-            BitSet isPrime = new BitSet(blockSize);
-            isPrime.set(0, blockSize, true);
-            for (int p : smallPrimes) {
-                // find the next number >= start that is a multiple of p
-                int i = (start % p == 0) ? start : p * (1 + start / p);
-                i -= start;
 
-                while (i < blockSize) {
-                    isPrime.clear(i);
-                    i += p;
-                }
-            }
-            return isPrime;
-        }
-    }
     /*
      * TO-DO
      * 1. fiddle around with chunk sizes e.g. ROOTMAX
@@ -125,5 +97,34 @@ public class ParallelPrimes {
             }
         }
         executor.shutdown();
+    }
+}
+class PrimeTask implements Callable<BitSet> {
+    int[] smallPrimes;
+    int start;
+    int blockSize;
+    public PrimeTask(int[] smallPrimes, int start, int blockSize) {
+        this.smallPrimes = smallPrimes;
+        this.start = start;
+        this.blockSize = blockSize;
+    }
+    @Override
+    public BitSet call() {
+        return primeBlock(smallPrimes, start, blockSize);
+    }
+    private static BitSet primeBlock(int[] smallPrimes, int start, int blockSize) {
+        BitSet isPrime = new BitSet(blockSize);
+        isPrime.set(0, blockSize, true);
+        for (int p : smallPrimes) {
+            // find the next number >= start that is a multiple of p
+            int i = (start % p == 0) ? start : p * (1 + start / p);
+            i -= start;
+
+            while (i < blockSize) {
+                isPrime.clear(i);
+                i += p;
+            }
+        }
+        return isPrime;
     }
 }
