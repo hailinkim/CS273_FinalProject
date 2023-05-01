@@ -27,8 +27,8 @@ public class ParallelPrimes {
         // If isPrime[i] == true, then i is a prime.
         // When a prime value i is found, set isPrime[j] = false for all multiples j of i.
         // The procedure terminates once we've examined all values i up to Math.sqrt(max).
-        int rootMax = (int) Math.sqrt(max);
-        for (int i = 2; i < rootMax; i++) {
+
+        for (int i = 2; i < Math.sqrt(max); i++) {
             if (isPrime.get(i)) {
                 for (int j = 2 * i; j < max; j += i) {
                     isPrime.clear(j);
