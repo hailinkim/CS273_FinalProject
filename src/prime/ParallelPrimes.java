@@ -97,25 +97,15 @@ public class ParallelPrimes {
         }
 
         ExecutorService executor = Executors.newWorkStealingPool();
-        List<PrimeTask> tasks = new ArrayList<>();
+        List<Future<BitSet>> futures = new ArrayList<>();
         long blockSize = ROOT_MAX;
 
         for (long curBlock = ROOT_MAX; curBlock < MAX_VALUE; curBlock += blockSize) {
             if(curBlock + blockSize > MAX_VALUE)
                 blockSize = MAX_VALUE - curBlock + 1;
             int start = (int) curBlock;
-            PrimeTask task = new PrimeTask(smallPrimes, start, (int) blockSize);
-            tasks.add(task);
+            futures.add(executor.submit(new PrimeTask(smallPrimes, start, (int) blockSize)));
         }
-
-        List<Future<BitSet>> futures = null;
-        try{
-            futures = executor.invokeAll(tasks);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        executor.shutdown();
 
         //copy the results into the primes array
         long curBlock = ROOT_MAX;
@@ -134,5 +124,6 @@ public class ParallelPrimes {
                 throw new RuntimeException(e);
             }
         }
+        executor.shutdown();
     }
 }
