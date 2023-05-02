@@ -129,15 +129,7 @@ public class ParallelPrimes {
     }
 
     public static void optimizedPrimes(int[] primes) {
-        long start = System.nanoTime();
         int[] smallPrimes = getSmallPrimesUpTo(ROOT_MAX);
-        long elapsedMS = (System.nanoTime() - start) / 1_000_000;
-        System.out.println("vanilla elapsed time: " + elapsedMS + "ms");
-
-        start = System.nanoTime();
-        int[] smallPrimes2 = optimizedGetSmallPrimesUpTo(ROOT_MAX);
-        elapsedMS = (System.nanoTime() - start) / 1_000_000;
-        System.out.println("optimized elapsed time: " + elapsedMS + "ms");
         int nPrimes = primes.length;
         int minSize = Math.min(nPrimes, smallPrimes.length);
         int count = minSize;
