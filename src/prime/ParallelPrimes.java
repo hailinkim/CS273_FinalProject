@@ -16,26 +16,51 @@ public class ParallelPrimes {
         if (max > MAX_SMALL_PRIME) {
             throw new RuntimeException("The value " + max + "exceeds the maximum small prime value (" + MAX_SMALL_PRIME + ")");
         }
+        BitSet isPrime = new BitSet(max);
+
+
+        for(int x =1; x*x<= max; x++){
+            for(int y =1; y*y<= max; y++){
+
+                int n = (4*x*x) + (y*y);
+                if(n<=max && (n%12 == 1|| n%12 ==5)){
+                    isPrime.set(n,true);
+                }
+                n = (3*x*x)-(y*y);
+                if(x>y&& n<= max && n%12 == 11){
+                    isPrime.set(n,true);
+                }
+
+            }
+        }
+        for(int r =5; r*r <= max; r++){
+            if(isPrime.get(r)){
+                for(int i = r*r; i<=max;i+= (r*r)){
+                    isPrime.set(r,false);
+                }
+            }
+        }
+        return isPrime.stream().toArray();
+
+
+
 
         // isPrime[i] will be true if and only if it is prime.
         // Initially set isPrime[i] to true for all i >= 2.
-        BitSet isPrime = new BitSet(max);
-        isPrime.set(2,max, true);
 
         // Apply the sieve of Eratosthenes to find primes.
         // The procedure iterates over values i = 2, 3,.... Math.sqrt(max).
         // If isPrime[i] == true, then i is a prime.
         // When a prime value i is found, set isPrime[j] = false for all multiples j of i.
         // The procedure terminates once we've examined all values i up to Math.sqrt(max).
-
-        for (int i = 2; i < Math.sqrt(max); i++) {
-            if (isPrime.get(i)) {
-                for (int j = 2 * i; j < max; j += i) {
-                    isPrime.clear(j);
-                }
-            }
-        }
-        return isPrime.stream().toArray();
+//        for (int i = 2; i < Math.sqrt(max); i++) {
+//            if (isPrime.get(i)) {
+//                for (int j = 2 * i; j < max; j += i) {
+//                    isPrime.clear(j);
+//                }
+//            }
+//        }
+//        return isPrime.stream().toArray();
     }
 
 
@@ -98,7 +123,9 @@ public class ParallelPrimes {
 
         ExecutorService executor = Executors.newWorkStealingPool();
         List<PrimeTask> tasks = new ArrayList<>();
-        long blockSize = ROOT_MAX;
+
+         long blockSize = ROOT_MAX;
+
 
         for (long curBlock = ROOT_MAX; curBlock < MAX_VALUE; curBlock += blockSize) {
             if(curBlock + blockSize > MAX_VALUE)
