@@ -1,12 +1,17 @@
 package prime;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.*;
+//import jdk.incubator.vector.*;
+import java.util.stream.IntStream;
+
 
 public class ParallelPrimes {
     public static final String TEAM_NAME = "The AMA's";
+//    static final VectorSpecies<Byte> SPECIES = ByteVector.SPECIES_PREFERRED;
     public static final int MAX_VALUE = Integer.MAX_VALUE;
     public static final int N_PRIMES = 105_097_565;
     public static final int ROOT_MAX = (int) Math.sqrt(MAX_VALUE);
@@ -37,9 +42,102 @@ public class ParallelPrimes {
         }
         return isPrime.stream().toArray();
     }
+    public static int[] optimizedGetSmallPrimesUpTo(int max) {
+        // check that the value max is in bounds, and throw an exception if not
+        if (max > MAX_SMALL_PRIME) {
+            throw new RuntimeException("The value " + max + "exceeds the maximum small prime value (" + MAX_SMALL_PRIME + ")");
+        }
+
+        byte[] isPrime = new byte[max / 8 + 1];
+
+        for (int i = 2; i < max; i++) {
+            int byteIndex = i / 8;
+            int bitIndex = i % 8;
+            isPrime[byteIndex] |= (1 << bitIndex);
+        }
+
+// Apply the sieve of Eratosthenes to find primes.
+// The procedure iterates over values i = 2, 3,.... Math.sqrt(max).
+// If isPrime[i/8] & (1 << (i%8)) != 0, then i is a prime.
+// When a prime value i is found, set isPrime[j/8] &= ~(1 << (j%8)) for all multiples j of i.
+// The procedure terminates once we've examined all values i up to Math.sqrt(max).
+        int rootMax = (int) Math.sqrt(max);
+        for (int i = 2; i < rootMax; i++) {
+            int byteIndex = i / 8;
+            int bitIndex = i % 8;
+            if ((isPrime[byteIndex] & (1 << bitIndex)) != 0) {
+                for (int j = 2 * i; j < max; j += i) {
+                    int jByteIndex = j / 8;
+                    int jBitIndex = j % 8;
+                    isPrime[jByteIndex] &= ~(1 << jBitIndex);
+                }
+            }
+        }
+
+// Count the number of primes we've found, and put them
+// sequentially in an appropriately sized array.
+        int count = trueCount(isPrime);
+
+        int[] primes = new int[count];
+        int pIndex = 0;
+
+        for (int i = 2; i < max; i++) {
+            int byteIndex = i / 8;
+            int bitIndex = i % 8;
+            if ((isPrime[byteIndex] & (1 << bitIndex)) != 0) {
+                primes[pIndex] = i;
+                pIndex++;
+            }
+        }
+
+        //TO-DO: implement SIMD
+//        int rootMax = (int) Math.sqrt(max);
+//        int step = SPECIES.length();
+//        for (int i = 2; i < rootMax; i++) {
+//            int byteIndex = i / 8;
+//            int bitIndex = i % 8;
+//            if ((isPrime[byteIndex] & (1 << bitIndex)) != 0) {
+//                var iVector = ByteVector.broadcast(SPECIES, (byte) i);
+//                int j = 2 * i;
+//                for (; j + step <= max; j += step) {
+//                    int jByteIndex = j / 8;
+//                    var jVector = ByteVector.fromArray(SPECIES, isPrime, jByteIndex);
+//                    var mask = iVector.lanewise(VectorOperators.AND, jVector);
+//                    if (mask.anyTrue()) {
+//                        Arrays.fill(isPrime, jByteIndex, jByteIndex + step, (byte) 0);
+//                    }
+//                }
+//                for (; j < max; j += i) {
+//                    int jByteIndex = j / 8;
+//                    int jBitIndex = j % 8;
+//                    isPrime[jByteIndex] &= ~(1 << jBitIndex);
+//                }
+//            }
+//        }
+
+        return primes;
+    }
+
+    public static int trueCount(byte[] arr) {
+        int count = 0;
+        for (byte b : arr) {
+            for (int i = 0; i < 8; i++) {
+                count += (b >>> i) & 1;
+            }
+        }
+        return count;
+    }
 
     public static void optimizedPrimes(int[] primes) {
+        long start = System.nanoTime();
         int[] smallPrimes = getSmallPrimesUpTo(ROOT_MAX);
+        long elapsedMS = (System.nanoTime() - start) / 1_000_000;
+        System.out.println("vanilla elapsed time: " + elapsedMS + "ms");
+
+        start = System.nanoTime();
+        int[] smallPrimes2 = optimizedGetSmallPrimesUpTo(ROOT_MAX);
+        elapsedMS = (System.nanoTime() - start) / 1_000_000;
+        System.out.println("optimized elapsed time: " + elapsedMS + "ms");
         int nPrimes = primes.length;
         int minSize = Math.min(nPrimes, smallPrimes.length);
         int count = minSize;
