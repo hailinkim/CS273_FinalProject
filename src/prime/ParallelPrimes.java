@@ -17,17 +17,22 @@ public class ParallelPrimes {
             throw new RuntimeException("The value " + max + "exceeds the maximum small prime value (" + MAX_SMALL_PRIME + ")");
         }
         BitSet isPrime = new BitSet(max);
+        double sqrt = Math.sqrt(max);
 
-
-        for(int x =1; x*x<= max; x++){
-            for(int y =1; y*y<= max; y++){
+        for(int x =1; x*x <= max; x++){
+            for(int y =1; y*y <= max; y++){
 
                 int n = (4*x*x) + (y*y);
-                if(n<=max && (n%12 == 1|| n%12 ==5)){
+                if(n<=max && (n % 12 == 1|| n % 12 ==5)){
                     isPrime.set(n,true);
                 }
+                n=(3*x*x)+(y*y);
+                if(n<= max && n %12 ==7){
+                    isPrime.set(n,true);
+                }
+
                 n = (3*x*x)-(y*y);
-                if(x>y&& n<= max && n%12 == 11){
+                if(x>y && n<= max && n%12 == 11){
                     isPrime.set(n,true);
                 }
 
