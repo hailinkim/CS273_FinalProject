@@ -18,32 +18,33 @@ public class ParallelPrimes {
         }
         BitSet isPrime = new BitSet(max);
         double sqrt = Math.sqrt(max);
-        isPrime.set(1,3, true);
+        isPrime.set(2,4, true);
 
 
-        for(int x =1; x*x <= max; x++){
-            for(int y =1; y*y <= max; y++){
+        for(int x =1; x<= sqrt; x++){
+            for(int y =1; y <= sqrt; y++){
 
                 int n = (4*x*x) + (y*y);
-                if(n<=max && (n % 12 == 1|| n % 12 ==5)){
+                 if(n<=max && (n % 12 == 1|| n % 12 ==5)){
                     isPrime.set(n,true);
                 }
                 n=(3*x*x)+(y*y);
-                if(n<= max && n %12 ==7){
+                if(n<= max && (n %12 ==7)){
                     isPrime.set(n,true);
                 }
 
                 n = (3*x*x)-(y*y);
-                if(x>y && n<= max && n%12 == 11){
+                if(x>y && n<= max && (n%12 == 11)){
                     isPrime.set(n,true);
                 }
 
             }
         }
-        for(int r =5; r*r <= max; r++){
+        for(int r =5; r <= sqrt; r++){
             if(isPrime.get(r)){
-                for(int i = r*r; i<=max;i+= (r*r)){
-                    isPrime.set(r,false);
+                int x = r*r;
+                for(int i = x; i<=max; i+= x){
+                    isPrime.set(i,false);
                 }
             }
         }
