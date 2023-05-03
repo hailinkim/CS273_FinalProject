@@ -16,26 +16,25 @@ public class ParallelPrimes {
         if (max > MAX_SMALL_PRIME) {
             throw new RuntimeException("The value " + max + "exceeds the maximum small prime value (" + MAX_SMALL_PRIME + ")");
         }
-        BitSet isPrime = new BitSet(max);
+        BitSet isPrime = new BitSet(max+1);
         double sqrt = Math.sqrt(max);
         isPrime.set(2,4, true);
 
 
         for(int x =1; x<= sqrt; x++){
             for(int y =1; y <= sqrt; y++){
-
                 int n = (4*x*x) + (y*y);
-                 if(n<=max && (n % 12 == 1|| n % 12 ==5)){
-                    isPrime.set(n,true);
+                 if((n<=max) && ((n % 12 == 1)|| (n % 12 ==5))){
+                    isPrime.flip(n);
                 }
                 n=(3*x*x)+(y*y);
-                if(n<= max && (n %12 ==7)){
-                    isPrime.set(n,true);
+                if((n<= max) && (n %12 ==7)){
+                    isPrime.flip(n);
                 }
 
                 n = (3*x*x)-(y*y);
-                if(x>y && n<= max && (n%12 == 11)){
-                    isPrime.set(n,true);
+                if((x>y) && (n<= max) && (n%12 == 11)){
+                    isPrime.flip(n);
                 }
 
             }
