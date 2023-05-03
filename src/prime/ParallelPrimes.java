@@ -18,6 +18,8 @@ public class ParallelPrimes {
         }
         BitSet isPrime = new BitSet(max);
         double sqrt = Math.sqrt(max);
+        isPrime.set(1,3, true);
+
 
         for(int x =1; x*x <= max; x++){
             for(int y =1; y*y <= max; y++){
