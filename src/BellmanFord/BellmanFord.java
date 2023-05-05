@@ -1,44 +1,23 @@
 package BellmanFord;//  Baseline Implementation of Bellman-Ford's single source shortest path (SSSP) algorithm.
+import java.util.Arrays;
+
 
 class BellmanFord
 {
-    // Driver code for simple testing
-    public static void main(String[] args)
-    {
-        int n = 5; // Number of vertices in graph
-        int m = 8; // Number of edges in graph
-
-        // the graph is basically a list of i edges, where
-        // edge is a list three values (to , from, weight),
-        // (edge from vertex 'from' to vertx 'to', with weight 'weight').
-        int graph[][] = {
-                { 0, 1, -1 }, // edge from vertex 0 to 1, with weight -1.
-                { 0, 2, 4 },  // edge from vertex 0 to 2, with weight 4.
-                { 1, 2, 3 },  // edge from vertex 1 to 2, with weight 3.
-                { 1, 3, 2 }, // edge from vertex 1 to 3, with weight 2.
-                { 1, 4, 2 }, // edge from vertex 1 to 4, with weight 2.
-                { 3, 2, 5 }, // edge from vertex 3 to 2, with weight 5.
-                { 3, 1, 1 },  // edge from vertex 3 to 1, with weight 1.
-                { 4, 3, -3 }  // edge from vertex 4 to 3, with weight -3.
-        };
-
-        BellmanFordBaseline(graph, n, m, 3);
-    }
 
     // A baseline function that finds shortest distances from u
     // to all other vertices
     // using the Bellman-Ford algorithm.
     // Also decects if there are any negative weight cycles.
-    static void BellmanFordBaseline(int graph[][], int numVertices, int numEdges,  int u)
+    static void bellmanFordBaseline(int[] currrentShortestDistance, int graph[][], int numVertices, int numEdges,  int u)
     {
         // Initialize the array to hold the current shortest distances from u to all other vertices from vertex 0 to numVertices - 1.
-        int [] currrentShortestDistance = new int[numVertices];
-        for (int i = 0; i < numVertices; i++){
-            currrentShortestDistance[i] = Integer.MAX_VALUE; // initialize to max int for now.
-        }
+//        int [] currrentShortestDistance = new int[numVertices];
 
-        // initialize distance of u to u as 0
-        currrentShortestDistance[u] = 0;
+        for (int i = 1; i < numVertices; i++){
+            if(i!=u)
+                currrentShortestDistance[i] = Integer.MAX_VALUE; // initialize to max int for now.
+        }
 
         // Relax all edges |numVerticies| - 1 times, since
         // simple path = path without any repeated edges --> can have at most |numVertices| - 1 edges.
@@ -51,7 +30,8 @@ class BellmanFord
                 // compare current shortest distance to edge[1], with the distance from edge[0] + weight of edge from 0 to 1.
                 // if the (distance from edge[0] + weight of edge from 0 to 1) is shorter than the current shortest distance to edge 1,
                 // update current shortest distance.
-                if (currrentShortestDistance[graph[edge][0]] != Integer.MAX_VALUE && currrentShortestDistance[graph[edge][0]] + graph[edge][2] < currrentShortestDistance[graph[edge][1]]){
+                if (currrentShortestDistance[graph[edge][0]] != Integer.MAX_VALUE &&
+                        currrentShortestDistance[graph[edge][0]] + graph[edge][2] < currrentShortestDistance[graph[edge][1]]){
                     currrentShortestDistance[graph[edge][1]] = currrentShortestDistance[graph[edge][0]] + graph[edge][2];
                 }
             }
