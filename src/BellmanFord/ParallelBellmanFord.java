@@ -35,9 +35,8 @@ public class ParallelBellmanFord {
         currentShortestDistance[u] = 0;
         System.out.println(Arrays.toString(currentShortestDistance));
 
-        ExecutorService executorService = Executors.newFixedThreadPool(2); //Runtime.getRuntime().availableProcessors()
-        int step = numEdges / 2;
-                //Runtime.getRuntime().availableProcessors();
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        int step = numEdges / Runtime.getRuntime().availableProcessors();
 
         for (int i = 1; i <= numVertices-1; i++) {
             List<Future<?>> futures = new ArrayList<>();
