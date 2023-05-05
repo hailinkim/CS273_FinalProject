@@ -1,18 +1,18 @@
 package prime;
-import java.lang.reflect.Array;
+import jdk.incubator.vector.IntVector;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.*;
-//import jdk.incubator.vector.*;
-import java.util.stream.IntStream;
+import jdk.incubator.vector.*;
 
 
 public class ParallelPrimes {
     public static final String TEAM_NAME = "The AMA's";
-//    static final VectorSpecies<Byte> SPECIES = ByteVector.SPECIES_PREFERRED;
     public static final int MAX_VALUE = Integer.MAX_VALUE;
+    static final VectorSpecies<Integer> SPECIES = IntVector.SPECIES_PREFERRED;
     public static final int N_PRIMES = 105_097_565;
     public static final int ROOT_MAX = (int) Math.sqrt(MAX_VALUE);
     public static final int MAX_SMALL_PRIME = 1 << 20;
@@ -140,7 +140,7 @@ public class ParallelPrimes {
         }
 
         ExecutorService executor = Executors.newWorkStealingPool();
-        List<Future<int[]>> futures = new ArrayList<>();
+        List<Future<IntVector>> futures = new ArrayList<>();
         int blockSize = ROOT_MAX*15;
         for (long curBlock = ROOT_MAX; curBlock < MAX_VALUE; curBlock += blockSize) {
             if(curBlock + blockSize > MAX_VALUE)
@@ -148,11 +148,11 @@ public class ParallelPrimes {
             futures.add(executor.submit(new PrimeTask(smallPrimes, (int) curBlock, blockSize)));
         }
 
-        for(Future<int[]> future:futures){
+        for(Future<IntVector> future:futures){
             try{
-                int[] blockPrime = future.get();
-                System.arraycopy(blockPrime, 0, primes, count, blockPrime.length);
-                count += blockPrime.length;
+                IntVector blockPrime = future.get();
+                blockPrime.intoArray(primes, count);
+                count += SPECIES.length();
             } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -160,7 +160,7 @@ public class ParallelPrimes {
         executor.shutdown();
     }
 }
-class PrimeTask implements Callable<int[]> {
+class PrimeTask implements Callable<IntVector> {
     int[] smallPrimes;
     int start;
     int blockSize;
@@ -170,9 +170,12 @@ class PrimeTask implements Callable<int[]> {
         this.blockSize = blockSize;
     }
     @Override
-    public int[] call() {
+    public IntVector call() {
         BitSet isPrime = primeBlock(smallPrimes, start, blockSize);
-        return Arrays.stream(isPrime.stream().toArray()).map(i -> i + (int) start).toArray();
+        int[] result = Arrays.stream(isPrime.stream().toArray()).map(i -> i + (int) start).toArray();
+//        VectorSpecies<int[]> SPECIES = VectorSpecies.of(int[].class, VectorShape.preferredShape());
+        var va = IntVector.fromArray(ParallelPrimes.SPECIES, result, 0);
+        return va;
     }
     private static BitSet primeBlock(int[] smallPrimes, int start, int blockSize) {
         BitSet isPrime = new BitSet(blockSize);
