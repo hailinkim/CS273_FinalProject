@@ -148,16 +148,43 @@ public class ParallelPrimes {
             futures.add(executor.submit(new PrimeTask(smallPrimes, (int) curBlock, blockSize)));
         }
 
-        for(Future<int[]> future:futures){
-            try{
-                int[] blockPrime = future.get();
-                System.arraycopy(blockPrime, 0, primes, count, blockPrime.length);
-                count += blockPrime.length;
-            } catch (ExecutionException | InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
+
+        /* TO-DO: parallelize the write operation
+        *task should take in list of futures, start, end of the future, primes arrray
+        * start, end of the future list
+        * one task iterate over future list from beginning to the midpoint
+        * write to the primes array
+        * the other task iterate from the midpoint (blockSize * index of the future) to the end
+        * */
+
+
+//        for(Future<int[]> future:futures){
+//            try{
+//                int[] blockPrime = future.get();
+//                System.arraycopy(blockPrime, 0, primes, count, blockPrime.length);
+//                count += blockPrime.length;
+//            } catch (ExecutionException | InterruptedException e) {
+//                throw new RuntimeException(e);
+//            }
+//        }
         executor.shutdown();
+    }
+}
+class WriteTask implements Runnable{
+    int[] primes;
+    int[] blockPrimes;
+    int start;
+    int end;
+    public WriteTask(int[] primes, int[] blockPrimes, int start, int end){
+        this.primes = primes;
+        this.blockPrimes = blockPrimes;
+        this.start = start;
+        this.end = end;
+    }
+    public void run(){
+        for(int i = start; i<end; i++){
+
+        }
     }
 }
 class PrimeTask implements Callable<int[]> {
