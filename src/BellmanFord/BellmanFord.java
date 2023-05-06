@@ -14,7 +14,7 @@ class BellmanFord
         // Initialize the array to hold the current shortest distances from u to all other vertices from vertex 0 to numVertices - 1.
 //        int [] currrentShortestDistance = new int[numVertices];
 
-        for (int i = 1; i < numVertices; i++){
+        for (int i = 0; i < numVertices; i++){
             if(i!=u)
                 currrentShortestDistance[i] = Integer.MAX_VALUE; // initialize to max int for now.
         }
@@ -42,15 +42,15 @@ class BellmanFord
         // distances if graph doesn't contain
         // negative weight cycle. If we get a
         // shorter path, then there is a cycle.
-        for (int i = 0; i < numEdges; i++)
-        {
-            int x = graph[i][0];
-            int y = graph[i][1];
-            int weight = graph[i][2];
-            if (currrentShortestDistance[x] != Integer.MAX_VALUE &&
-                    currrentShortestDistance[x] + weight < currrentShortestDistance[y])
-                System.out.println("Graph contains negative weight cycle!!!!");
-        }
+//        for (int i = 0; i < numEdges; i++)
+//        {
+//            int x = graph[i][0];
+//            int y = graph[i][1];
+//            int weight = graph[i][2];
+//            if (currrentShortestDistance[x] != Integer.MAX_VALUE &&
+//                    currrentShortestDistance[x] + weight < currrentShortestDistance[y])
+//                System.out.println("Graph contains negative weight cycle!!!!");
+//        }
 
 //        System.out.println("Vertex\t\tDistance from Source");
 //        for (int i = 0; i < numVertices; i++)
