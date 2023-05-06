@@ -1,97 +1,60 @@
 package BellmanFord;
-
-
 import java.util.Arrays;
 import java.util.Random;
-import java.util.stream.IntStream;
 
 public class BellmanTester {
     public static final int WARMUP_ITERATIONS = 5;
-    public static final int TEST_ITERATIONS = 30;
+    public static final int TEST_ITERATIONS = 1;
 
-    static final int NUM_VERTICES = 10; // Number of vertices in graph
-    static final int NUM_EDGES = 30; // Number of edges in graph
+    static final int NUM_VERTICES = 1000; // Number of vertices in graph
+    static final int NUM_EDGES = 3500; // Number of edges in graph
     static int [][] testgraph = new int[NUM_VERTICES][NUM_EDGES];
 
     public static void main(String[] args) {
         System.out.println("generating new random weighted directed graph with no negative weight cyles.");
         System.out.println("Number of vertices: " + NUM_VERTICES + ", Number of edges: " + NUM_EDGES);
-        testgraph = new int[][]{{8, 2, -3},
-                {5, 8, -9},
-                {8, 4, 5},
-                {4, 2, 1},
-                {4, 3, -3},
-                {7, 2, -9},
-                {2, 2, 2},
-                {1, 9, -7},
-                {3, 6, 0},
-                {1, 5, -9},
-                {2, 8, 7},
-                {3, 4, -5},
-                {7, 9, -4},
-                {1, 5, -3},
-                {2, 8, -2},
-                {2, 3, 4},
-                {8, 1, -9},
-                {1, 1, -6},
-                {6, 5, -10},
-                {3, 2, -1},
-                {2, 8, 5},
-                {3, 1, -4},
-                {8, 7, 4},
-                {9, 4, 0},
-                {2, 8, -4},
-                {2, 8, 6},
-                {1, 8, 0},
-                {8, 4, 9},
-                {5, 4, 9},
-                {8, 9, 2}};
-
-
-//        testgraph = GraphGenerator.generateGraph(NUM_VERTICES,NUM_EDGES);
+        testgraph = GraphGenerator.generateGraph(NUM_VERTICES,NUM_EDGES);
         System.out.println("finished generating graph.");
 //        System.out.println("the generated graph is: \n");
-        printgraph(testgraph);
+//        printgraph(testgraph);
 
         int[] source = Arrays.stream(testgraph).mapToInt(ints -> ints[0]).toArray();
-        int u = 4;
-                //source[new Random().nextInt(source.length)];
+        int u = source[new Random().nextInt(source.length)];
         System.out.println("start: "+ u);
         int[] knownShortestDistance = new int[NUM_VERTICES];
         int[] testShortestDistance = new int[NUM_VERTICES];
 
+        long start = System.nanoTime();
         BellmanFord.bellmanFordBaseline(knownShortestDistance, testgraph, NUM_VERTICES, NUM_EDGES, u);
+        long elapsedMS = (System.nanoTime() - start) / 1_000_000;
         System.out.println("baseline done\n");
+        System.out.println("elapsed time: " + elapsedMS + " ms");
 
-
-        System.out.println("starting warmup.\n");
         // run warmup before timing
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
             ParallelBellmanFord.bellmanFordOptimized(testShortestDistance, testgraph, NUM_VERTICES, NUM_EDGES, u);
         }
-        System.out.println("warmup finished.\n");
+        System.out.println("warmup finished.");
 
-//        System.out.println("testing BellmanFordBaseline (test iteration = " + TEST_ITERATIONS + " times).\n");
-//        // run main iterations to test BellmanFordBaseline performance.
-//        long start = System.nanoTime();
-//        for (int i = 0; i < TEST_ITERATIONS; i++) {
-//            ParallelBellmanFord.bellmanFordOptimized(testShortestDistance, testgraph, NUM_VERTICES, NUM_EDGES, u);
-//        }
-//        long elapsedMS = (System.nanoTime() - start) / 1_000_000;
-//
-//        for (int i = 0; i < knownShortestDistance.length; i++) {
-//            if (knownShortestDistance[i] != testShortestDistance[i]) {
-//                System.out.println("correctness test failed\n" +
-//                        "i = " + i + "\n" +
-//                        "knownPrimes[i] = " + knownShortestDistance[i] + "\n" +
-//                        "testPrimes[i] = " + testShortestDistance[i]);
-//                return;
-//            }
-//        }
-//
-//        System.out.println(Arrays.toString(knownShortestDistance));
-//        System.out.println(Arrays.toString(testShortestDistance));
-//        System.out.println("elapsed time: " + elapsedMS + " ms");
+        System.out.println("testing BellmanFordBaseline (test iteration = " + TEST_ITERATIONS + " times).\n");
+        // run main iterations to test BellmanFordBaseline performance.
+        start = System.nanoTime();
+        for (int i = 0; i < TEST_ITERATIONS; i++) {
+            ParallelBellmanFord.bellmanFordOptimized(testShortestDistance, testgraph, NUM_VERTICES, NUM_EDGES, u);
+        }
+        elapsedMS = (System.nanoTime() - start) / 1_000_000;
+
+        for (int i = 0; i < knownShortestDistance.length; i++) {
+            if (knownShortestDistance[i] != testShortestDistance[i]) {
+                System.out.println("correctness test failed\n" +
+                        "i = " + i + "\n" +
+                        "knownPrimes[i] = " + knownShortestDistance[i] + "\n" +
+                        "testPrimes[i] = " + testShortestDistance[i]);
+                return;
+            }
+        }
+
+        System.out.println("elapsed time: " + elapsedMS + " ms");
     }
 
     public static void printgraph(int[][] graph) {

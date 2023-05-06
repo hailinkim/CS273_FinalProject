@@ -4,18 +4,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicIntegerArray;
-
-import jdk.incubator.vector.*;
-//import java.util.concurrent.atomic.AtomicIntegerArray;
 public class ParallelBellmanFord {
-    static final VectorSpecies<Integer> SPECIES = IntVector.SPECIES_PREFERRED;
 
     static class BellmanFordTask implements Runnable {
         private int[][] graph;
         private int start;
         private int end;
-        private int[] currentShortestDistance;
+        private final int[] currentShortestDistance;
 
         public BellmanFordTask(int[][] graph, int start, int end, int[] currentShortestDistance) {
             this.graph = graph;
@@ -23,22 +18,12 @@ public class ParallelBellmanFord {
             this.end = end;
             this.currentShortestDistance = currentShortestDistance;
         }
+
         public void run() {
             for (int edge = start; edge < end; edge++) {
                 if (currentShortestDistance[graph[edge][0]] != Integer.MAX_VALUE &&
                         currentShortestDistance[graph[edge][0]] + graph[edge][2] < currentShortestDistance[graph[edge][1]]){
-                    if(start == 15){
-                        System.out.println("edge " + edge + ": " + currentShortestDistance[graph[edge][0]]);
-                        System.out.println("src: " + currentShortestDistance[graph[edge][0]] + ",dest: " + currentShortestDistance[graph[edge][1]] +
-                                ", weight: " + graph[edge][2]);
-                        System.out.println("edge " + edge + ": " + currentShortestDistance[graph[edge][0]]);
-                        System.out.println(graph[edge][2]);
-                        System.out.println(currentShortestDistance[graph[edge][0]] +graph[edge][2]);
-                    }
                     currentShortestDistance[graph[edge][1]] = currentShortestDistance[graph[edge][0]] + graph[edge][2];
-                    if(start == 15){
-                        System.out.println("new dest: " + currentShortestDistance[graph[edge][1]]);
-                    }
                 }
             }
         }
@@ -48,7 +33,7 @@ public class ParallelBellmanFord {
         Arrays.fill(currentShortestDistance, 0, currentShortestDistance.length, Integer.MAX_VALUE);
         currentShortestDistance[u] = 0;
 
-        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
         int step = numEdges / Runtime.getRuntime().availableProcessors();
 
         for (int i = 0; i < numVertices-1; i++) {
@@ -62,20 +47,14 @@ public class ParallelBellmanFord {
             for(Future<?> future: futures){
                 try {
                     future.get();
-//                    for (int k = 0; k < numVertices; i++) {
-//                        if (result[k] < currentShortestDistance[k]) {
-//                            currentShortestDistance[k] = result[k];
-//                        }
-//                    }
                 } catch (InterruptedException | ExecutionException e) {
                     throw new RuntimeException(e);
                 }
             }
             futures.clear();
-//            System.out.println("futures: " + futures);
         }
-
         executorService.shutdown();
+
 
         // check for negative-weight cycles.
 //        for (int i = 0; i < numEdges; i++) {
@@ -89,6 +68,7 @@ public class ParallelBellmanFord {
 //        }
     }
 }
+
 
 //                    System.arraycopy(result, 0, currentShortestDistance, 0, result.length);
 //TO-DO: SIMD with masking

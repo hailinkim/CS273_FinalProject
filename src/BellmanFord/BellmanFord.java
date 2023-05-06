@@ -1,7 +1,4 @@
 package BellmanFord;//  Baseline Implementation of Bellman-Ford's single source shortest path (SSSP) algorithm.
-import java.util.Arrays;
-
-
 class BellmanFord
 {
 
@@ -11,9 +8,6 @@ class BellmanFord
     // Also decects if there are any negative weight cycles.
     static void bellmanFordBaseline(int[] currrentShortestDistance, int graph[][], int numVertices, int numEdges,  int u)
     {
-        // Initialize the array to hold the current shortest distances from u to all other vertices from vertex 0 to numVertices - 1.
-//        int [] currrentShortestDistance = new int[numVertices];
-
         for (int i = 0; i < numVertices; i++){
             if(i!=u)
                 currrentShortestDistance[i] = Integer.MAX_VALUE; // initialize to max int for now.
