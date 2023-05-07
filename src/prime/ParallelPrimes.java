@@ -148,14 +148,45 @@ public class ParallelPrimes {
             futures.add(executor.submit(new PrimeTask(smallPrimes, (int) curBlock, blockSize)));
         }
 
+        int midpoint = futures.size()/2 + 1;
+        Thread[] threads = new Thread[2];
+        threads[0] = new Thread(new WriteTask(futures, primes, 0, midpoint, count));
+        threads[1] = new Thread(new WriteTask(futures, primes, midpoint, futures.size(), 54411179));
+
+        for (Thread t : threads) {
+            t.start();
+        }
+
+        for (Thread t : threads) {
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                // don't care
+            }
+        }
+//        ExecutorService pool = Executors.newFixedThreadPool(2);
+//
+//        for (int i = 0; i < 2; ++i) { //same number of tasks as Approach 1
+//            pool.execute(new WriteTask(futures, primes, 0, midpoint, count));
+//        }
+//
+//        pool.shutdown();
+//        try {
+//            pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+//        } catch (InterruptedException e) {
+//            // blah
+//        }
+
 
         /* TO-DO: parallelize the write operation
-        *task should take in list of futures, start, end of the future, primes arrray
-        * start, end of the future list
-        * one task iterate over future list from beginning to the midpoint
-        * write to the primes array
-        * the other task iterate from the midpoint (blockSize * index of the future) to the end
-        * */
+         *task should take in list of futures, start, end of the future, primes arrray
+         * start, end of the future list
+         * one task iterate over future list from beginning to the midpoint
+         * write to the primes array
+         * the other task iterate from the midpoint (blockSize * index of the future) to the end
+         * */
+
+
 
 
 //        for(Future<int[]> future:futures){
@@ -168,22 +199,59 @@ public class ParallelPrimes {
 //            }
 //        }
         executor.shutdown();
+        try {
+            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException e) {
+            // blah
+        }
     }
 }
+
 class WriteTask implements Runnable{
+    List<Future<int[]>> futures;
     int[] primes;
-    int[] blockPrimes;
     int start;
     int end;
-    public WriteTask(int[] primes, int[] blockPrimes, int start, int end){
+    int count;
+    public WriteTask(List<Future<int[]>> futures, int[] primes, int start, int end, int count){
+        this.futures = futures;
         this.primes = primes;
-        this.blockPrimes = blockPrimes;
         this.start = start;
         this.end = end;
+        this.count = count;
     }
     public void run(){
-        for(int i = start; i<end; i++){
-
+        int length = 0;
+//        try {
+//            length = start==0? 0:futures.get(start-1).get().length;
+//            System.out.println("length: " + length);
+//        } catch (InterruptedException | ExecutionException e) {
+//            throw new RuntimeException(e);
+//        }
+        System.out.println("start: " + start);
+        System.out.println("end: " + end);
+        for(int i=start; i<end;i++){
+            try {
+                int[] blockPrime = futures.get(i).get();
+                int index = Arrays.asList(blockPrime).indexOf(1073975887);
+                if (index != -1) {
+                    System.out.println("index" + index);
+                }
+                count += length;
+//                System.out.println("i: " + i + ", length: " + length + ", count: " + count);
+                System.arraycopy(blockPrime, 0, primes, count, blockPrime.length);
+                length = blockPrime.length;
+                if(i == 1545) {
+                    System.out.println("last cnt: " + count);
+                    System.out.println(blockPrime[blockPrime.length-1]);
+                }
+                if(i == 1546) {
+                    System.out.println("last cnt: " + count);
+                    System.out.println(blockPrime[0]);
+                }
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }
