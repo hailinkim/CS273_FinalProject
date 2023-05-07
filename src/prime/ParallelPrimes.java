@@ -149,6 +149,19 @@ public class ParallelPrimes {
         }
 
         int midpoint = futures.size()/2 + 1;
+//        ExecutorService pool = Executors.newFixedThreadPool(2);
+//        for (int i = 0; i < 2; ++i) { //same number of tasks as Approach 1
+//            pool.execute(new WriteTask(futures, primes, 0, midpoint, count));
+//        }
+//
+//        pool.shutdown();
+//        try {
+//            pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+//        } catch (InterruptedException e) {
+//            // blah
+//        }
+
+
         Thread[] threads = new Thread[2];
         threads[0] = new Thread(new WriteTask(futures, primes, 0, midpoint, count));
         threads[1] = new Thread(new WriteTask(futures, primes, midpoint, futures.size(), 54411179));
@@ -228,27 +241,29 @@ class WriteTask implements Runnable{
 //        } catch (InterruptedException | ExecutionException e) {
 //            throw new RuntimeException(e);
 //        }
-        System.out.println("start: " + start);
-        System.out.println("end: " + end);
         for(int i=start; i<end;i++){
             try {
                 int[] blockPrime = futures.get(i).get();
-                int index = Arrays.asList(blockPrime).indexOf(1073975887);
-                if (index != -1) {
-                    System.out.println("index" + index);
-                }
                 count += length;
+//                if(count==54411179){
+//                    for(int j = 0; j<blockPrime.length; j++) {
+//                        if (blockPrime[j] == 1074670979) {
+//                            System.out.println("start: " + start);
+//                            System.out.println("index: " + j);
+//                        }
+//                    }
+//                }
 //                System.out.println("i: " + i + ", length: " + length + ", count: " + count);
                 System.arraycopy(blockPrime, 0, primes, count, blockPrime.length);
                 length = blockPrime.length;
-                if(i == 1545) {
-                    System.out.println("last cnt: " + count);
-                    System.out.println(blockPrime[blockPrime.length-1]);
-                }
-                if(i == 1546) {
-                    System.out.println("last cnt: " + count);
-                    System.out.println(blockPrime[0]);
-                }
+//                if(i == 1545) {
+//                    System.out.println("last cnt: " + count);
+//                    System.out.println(blockPrime[blockPrime.length-1]);
+//                }
+//                if(i == 1546) {
+//                    System.out.println("last cnt: " + count);
+//                    System.out.println(blockPrime[0]);
+//                }
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             }

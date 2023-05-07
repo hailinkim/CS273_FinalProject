@@ -2,6 +2,8 @@ package prime;// A class for testing the correctness and performance of your
 // implementation of the prime finding task.
 // ***DO NOT MODIFY THIS FILE***
 
+import java.util.Arrays;
+
 public class PrimeTester {
     public static final int WARMUP_ITERATIONS = 1;
     public static final int TEST_ITERATIONS = 1;
