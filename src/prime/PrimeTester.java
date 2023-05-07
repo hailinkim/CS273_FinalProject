@@ -38,10 +38,6 @@ public class PrimeTester {
         System.out.println("Team: " + ParallelPrimes.TEAM_NAME);
 
         for (int i = 0; i < knownPrimes.length; i++) {
-//            if (testPrimes[i] == 1073975887) {
-//                System.out.println("index: " + i);
-//                return;
-//            }
             if (knownPrimes[i] != testPrimes[i]) {
                 System.out.println("correctness test failed\n" +
                         "i = " + i + "\n" +
