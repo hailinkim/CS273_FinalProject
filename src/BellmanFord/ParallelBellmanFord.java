@@ -38,7 +38,13 @@ public class ParallelBellmanFord {
 
         for (int i = 0; i < numVertices-1; i++) {
             List<Future<?>> futures = new ArrayList<>();
-            //parallelize the inner loop
+            /*
+            * TO-DO:
+            * inner loop should traverse the vertices, and parallelize the inner loop
+            * each task updates the distance for a subset of vertices
+            * each task should traverse all the neighbors of a given vertex
+            * maybe we need a method that gives us the neighbors of a vertex in the graph?
+            * */
             for(int j = 0; j < numEdges; j+=step){
                 int start = j;
                 int end = Math.min(j + step, numEdges);
