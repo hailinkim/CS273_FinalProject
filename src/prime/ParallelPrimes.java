@@ -148,9 +148,15 @@ public class ParallelPrimes {
             futures.add(executor.submit(new PrimeTask(smallPrimes, (int) curBlock, blockSize)));
         }
 
-        for(Future<int[]> future:futures){
+        for(int i=0; i<futures.size();i++){
             try{
-                int[] blockPrime = future.get();
+                int[] blockPrime = futures.get(i).get();
+                for(int j = 0; j<blockPrime.length; j++) {
+                    if (blockPrime[j] == 1074670979) {
+                        System.out.println("future index: " + i);
+                        System.out.println("index: " + j);
+                    }
+                }
                 System.arraycopy(blockPrime, 0, primes, count, blockPrime.length);
                 count += blockPrime.length;
             } catch (ExecutionException | InterruptedException e) {
