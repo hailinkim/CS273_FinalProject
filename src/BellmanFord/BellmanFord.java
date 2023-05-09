@@ -1,53 +1,44 @@
-package BellmanFord;//  Baseline Implementation of Bellman-Ford's single source shortest path (SSSP) algorithm.
+package BellmanFord;
+
+import java.util.stream.IntStream;
+
+//  Baseline Implementation of Bellman-Ford's single source shortest path (SSSP) algorithm.
+//  UPDATE to the baseline implementation: uses Adjacency Matrix representation of a graph, instead of an edge list representation.
 class BellmanFord
 {
-
     // A baseline function that finds shortest distances from u
     // to all other vertices
     // using the Bellman-Ford algorithm.
-    // Also decects if there are any negative weight cycles.
-    static void bellmanFordBaseline(int[] currrentShortestDistance, int graph[][], int numVertices, int numEdges,  int u)
+    static void bellmanFordBaseline(int[] currentShortestDistance, int graph[][], int startingVertexU)
     {
+        int numVertices = graph.length;
         for (int i = 0; i < numVertices; i++){
-            if(i!=u)
-                currrentShortestDistance[i] = Integer.MAX_VALUE; // initialize to max int for now.
+            if(i!=startingVertexU)
+                currentShortestDistance[i] = Integer.MAX_VALUE; // initialize to max int for now.
         }
 
-        // Relax all edges |numVerticies| - 1 times, since
-        // simple path = path without any repeated edges --> can have at most |numVertices| - 1 edges.
-        for (int j_hop = 0; j_hop < numVertices - 1; j_hop++) // for all vertices 0 to n-1,
-        {
-            for (int edge = 0; edge < numEdges; edge++) // examine all edges in the graph.
-            {
-                // edge[0] is the current vertex, out from which the edge is coming.
-                // edge[1] is the next vertx, to which the edge is going.
-                // compare current shortest distance to edge[1], with the distance from edge[0] + weight of edge from 0 to 1.
-                // if the (distance from edge[0] + weight of edge from 0 to 1) is shorter than the current shortest distance to edge 1,
-                // update current shortest distance.
-                if (currrentShortestDistance[graph[edge][0]] != Integer.MAX_VALUE &&
-                        currrentShortestDistance[graph[edge][0]] + graph[edge][2] < currrentShortestDistance[graph[edge][1]]){
-                    currrentShortestDistance[graph[edge][1]] = currrentShortestDistance[graph[edge][0]] + graph[edge][2];
+        // Relax edges repeatedly
+        for (int j_hop = 0; j_hop < numVertices - 1; j_hop++) {
+            for (int u = 0; u < numVertices; u++) {
+                int[] adjacency = graph[u];
+                int[] neighbors = IntStream.range(0,adjacency.length).filter(i -> adjacency[i] !=0).toArray();
+                for (int v : neighbors) {
+                    // if there's an edge between the source and destination, and if the current dist[source] isn't inifinity,
+                    // AND if the currentShortestDistance[u] + graph[u][v] is LESS THAN currentShortestDistance[v],
+                    if (currentShortestDistance[v] != Integer.MAX_VALUE) { //graph[u][v] != 0 &&
+                        currentShortestDistance[u] = Math.min(currentShortestDistance[u], currentShortestDistance[v] + graph[u][v]); // then update the currentShortestDistance[v].
+                    }
                 }
+                //graph[source] --> extract out the index of nonzero elements (aka neighbors)
+//                for (int v = 0; v < numVertices; v++) {
+//                    // if there's an edge between the source and destination, and if the current dist[source] isn't inifinity,
+//                    // AND if the currentShortestDistance[u] + graph[u][v] is LESS THAN currentShortestDistance[v],
+//                    if (graph[u][v] != 0 && currentShortestDistance[u] != Integer.MAX_VALUE &&
+//                            currentShortestDistance[u] + graph[u][v] < currentShortestDistance[v]) {
+//                                    currentShortestDistance[v] = currentShortestDistance[u] + graph[u][v]; // then update the currentShortestDistance[v].
+//                    }
+//                }
             }
         }
-
-        // check for negative-weight cycles.
-        // The above step guarantees shortest
-        // distances if graph doesn't contain
-        // negative weight cycle. If we get a
-        // shorter path, then there is a cycle.
-//        for (int i = 0; i < numEdges; i++)
-//        {
-//            int x = graph[i][0];
-//            int y = graph[i][1];
-//            int weight = graph[i][2];
-//            if (currrentShortestDistance[x] != Integer.MAX_VALUE &&
-//                    currrentShortestDistance[x] + weight < currrentShortestDistance[y])
-//                System.out.println("Graph contains negative weight cycle!!!!");
-//        }
-
-//        System.out.println("Vertex\t\tDistance from Source");
-//        for (int i = 0; i < numVertices; i++)
-//            System.out.println(i + "\t\t\t\t" + currrentShortestDistance[i]);
     }
 }

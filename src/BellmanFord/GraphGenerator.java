@@ -1,39 +1,71 @@
 package BellmanFord;
 
 import java.util.*;
-//import java.util.concurrent.ConcurrentHashMap;
 
 public class GraphGenerator {
-   public static Random random = new Random();
-
+    public static Random random = new Random();
     // Generate a random weighted directed graph.
-    // Our graph is represented as a adjacency matrix, so that each cell in the matrix represents an edge between two vertices.
-    //If there is an edge between vertex i and vertex j, then matrix[i][j]= weight.
-    public static  int[][] generateGraph(int numVertices, int numEdges) {
-        int[][] graph = new int[numVertices][numVertices];
-        // Map<Integer,Integer> edge = new ConcurrentHashMap<>();
-        // Map<Integer, Map<Integer,Integer>> graphMap = new ConcurrentHashMap<>();
-        // graph = < source vertex : <Destination : Weight>>
+    // Our graph is represented as an adjacency matrix, so that each cell in the matrix represents an edge between two vertices.
+    // If there is an edge between vertex i and vertex j, then matrix[i][j] = non-zero weight.
+    //Note that this method assumes that the graph is undirected, thus generating a symmetric adjacency matrix.
+    public static int[][] generateGraph(int numVertices, int numEdges) {
+        int[][] matrix = new int[numVertices][numVertices];
 
-        // Generate numEdges number of random edges, that start from a random 'source' vertex,
-        // end at a random outgoing neighbor, 'destination' vertex, with a random weight 'weight.'
-        for (int i = 0; i < numEdges; i++) {
-            int source = random.nextInt(numVertices);
-            int destination = random.nextInt(numVertices);
-            int weight = random.nextInt(20) - 10; // Generate random weight between -10 and 10
+        Random random = new Random();
+        int count = 0;
+        int weight;
 
-            // check that source and destination are different numbers, since we don't want an edge that goes FROM a vertex TO the same vertex.
-            // also check that the destination isn't already mapped to the source via another edge.
-            while (destination==source || graph[source][destination] !=0){
-                destination = random.nextInt(numVertices); // regenerate 'destination'
+        while (count < numEdges) {
+            int i = random.nextInt(numVertices);
+            int j = random.nextInt(numVertices);
+
+            if (i == j || matrix[i][j] != 0) {
+                continue;
             }
-            graph[source][destination] = weight;
+            do {
+                weight = random.nextInt(21) - 10; //generate a weight between -10 and 10
+            } while (weight == 0);  //make sure we have non-zero weights
 
-            //edge.put(destination,weight); // there can only be 1 weight mapped to each destination.
-            // Add inner maps to the outer map
-            //graphMap.put(source, edge);
+            matrix[i][j] = weight;
+            matrix[j][i] = weight;
+            count++;
         }
 
-        return graph;
+        // Detect and eliminate negative weight cycles
+        eliminateNegativeWeightCycles(matrix);
+
+        return matrix;
+    }
+
+    // Detect and eliminate negative weight cycles using the Bellman-Ford algorithm
+    private static void eliminateNegativeWeightCycles(int[][] graph) {
+        int numVertices = graph.length;
+        int[] distance = new int[numVertices];
+
+        // Initialize distances to infinity
+        Arrays.fill(distance, Integer.MAX_VALUE);
+
+        // Set distance to the source vertex as 0
+        distance[0] = 0;
+
+        // Relax edges repeatedly
+        for (int i = 0; i < numVertices - 1; i++) {
+            for (int u = 0; u < numVertices; u++) {
+                for (int v = 0; v < numVertices; v++) {
+                    if (graph[u][v] != 0 && distance[u] != Integer.MAX_VALUE && distance[u] + graph[u][v] < distance[v]) {
+                        distance[v] = distance[u] + graph[u][v];
+                    }
+                }
+            }
+        }
+
+        // Check for negative weight cycles and set their weights to 0
+        for (int u = 0; u < numVertices; u++) {
+            for (int v = 0; v < numVertices; v++) {
+                if (graph[u][v] != 0 && distance[u] != Integer.MAX_VALUE && distance[u] + graph[u][v] < distance[v]) {
+                    graph[u][v] = 0;
+                }
+            }
+        }
     }
 }
