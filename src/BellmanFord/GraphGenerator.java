@@ -27,7 +27,7 @@ public class GraphGenerator {
             } while (weight == 0);  //make sure we have non-zero weights
 
             matrix[i][j] = weight;
-            matrix[j][i] = weight;
+//            matrix[j][i] = weight;
             count++;
         }
 
