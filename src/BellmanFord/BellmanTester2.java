@@ -1,33 +1,43 @@
 package BellmanFord;
-import java.util.Arrays;
-import java.util.Random;
 
-public class BellmanTester {
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.IntStream;
+
+public class BellmanTester2 {
     public static final int WARMUP_ITERATIONS = 5;
     public static final int TEST_ITERATIONS = 1;
 
-    static final int NUM_VERTICES = 1000; // Number of vertices in graph
-    static final int NUM_EDGES = 3500; // Number of edges in graph
-    static int [][] testgraph = new int[NUM_VERTICES][NUM_EDGES];
+    static int MAX_NUM_VERTICES = 10; // Number of vertices in graph
+    static int MAX_NUM_EDGES = 45; // Number of edges in graph, must be less than NUM_VERTICES ^ 2.
+    static int[][] testgraph = new int[MAX_NUM_VERTICES][MAX_NUM_EDGES];
 
     public static void main(String[] args) {
-        System.out.println("Generating new random weighted directed graph with no negative weight cyles....");
-        testgraph = GraphGenerator.generateGraph(NUM_VERTICES,NUM_EDGES);
-        System.out.println("finished generating graph.\n");
-        System.out.println("Number of vertices: " + NUM_VERTICES + ", Number of edges: " + NUM_EDGES);
+        System.out.println("Generating new random weighted directed graph with no negative weight cycles....");
+        testgraph = AdjacencyMatrixGraphGenerator.generateGraph(MAX_NUM_VERTICES, MAX_NUM_EDGES);
+        System.out.println("finished generating graph.");
+        // System.out.println("the generated graph is: \n");
+        // printGraph(testgraph);
 
-//        System.out.println("the generated graph is: \n");
-//        printgraph(testgraph);
+        List<Integer> sourceVertices = getNonZeroIndices(testgraph[0]);
+//        System.out.println(sourceVertices.isEmpty());
+        if(sourceVertices.isEmpty())
+            printGraph(testgraph);
+        System.out.println("here is the list of vertices in our graph with an outgoing edge: " );
+        sourceVertices.forEach(element -> System.out.print(element + "  "));
+        int u = getRandomElement(sourceVertices);
+        System.out.printf("\nOur randomly selected starting vertex (u) is vertex %d.\n\n",  u);
 
-        int[] source = Arrays.stream(testgraph).mapToInt(ints -> ints[0]).toArray();
-        int u = source[new Random().nextInt(source.length)];
-        System.out.printf("our randomly selected starting vertex u is vertex %d.\n",  u);
-        int[] knownShortestDistance = new int[NUM_VERTICES];
-        int[] testShortestDistance = new int[NUM_VERTICES];
+        int[] knownShortestDistance = new int[testgraph.length];
+        int[] testShortestDistance = new int[testgraph.length];
+
+//        BellmanFord2.bellmanFordBaseline2(testShortestDistance, testgraph, u);
 
         // run warmup before timing.
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            ParallelBellmanFord.bellmanFordOptimized(testShortestDistance, testgraph, NUM_VERTICES, NUM_EDGES, u);
+            BellmanFord2.bellmanFordBaseline2(knownShortestDistance, testgraph, u);
         }
         System.out.println("Warmup finished.");
 
@@ -35,7 +45,7 @@ public class BellmanTester {
         System.out.println("testing BellmanFordBaseline (test iteration = " + TEST_ITERATIONS + " times).\n");
         long start = System.nanoTime();
         for (int i = 0; i < TEST_ITERATIONS; i++) {
-            BellmanFord.bellmanFordBaseline(knownShortestDistance, testgraph, NUM_VERTICES, NUM_EDGES, u);
+            BellmanFord2.bellmanFordBaseline2(knownShortestDistance, testgraph, u);
         }
         long elapsedMS = (System.nanoTime() - start) / 1_000_000;
         System.out.println("elapsed time for baseline:  " + elapsedMS + " ms");
@@ -43,7 +53,7 @@ public class BellmanTester {
         // run main iterations to test BellmanFordBaseline performance.
         long start2 = System.nanoTime();
         for (int i = 0; i < TEST_ITERATIONS; i++) {
-            ParallelBellmanFord.bellmanFordOptimized(testShortestDistance, testgraph, NUM_VERTICES, NUM_EDGES, u);
+            ParallelBellmanFord2.bellmanFordOptimized2(testShortestDistance, testgraph, u);
         }
         long elapsedMS2 = (System.nanoTime() - start2) / 1_000_000;
         System.out.println("elapsed time for optimized:  " + elapsedMS2 + " ms");
@@ -60,15 +70,37 @@ public class BellmanTester {
         }
         System.out.println("correctness test succeeded.");
     }
+    public static Integer getRandomElement(List<Integer> list) {
+        Random random = new Random();
+        int randomIndex = random.nextInt(list.size());
+        return list.get(randomIndex);
+    }
+    public static List<Integer> getNonZeroIndices(int[] arr) {
+        List<Integer> nonZeroIndices = new ArrayList<>();
+        // Find the indices of non-zero elements
+        for (int i = 0; i < arr.length; i++) {
+            if (arr[i] != 0) {
+                nonZeroIndices.add(i);
+            }
+        }
+        // Return the list of non-zero indices
+        return nonZeroIndices;
+    }
 
-    public static void printgraph(int[][] graph) {
-        int i = 0;
-        for (; i < graph.length; i++) {
-            System.out.printf("{%d, %d, %d}\n", graph[i][0], graph[i][1], graph[i][2]);
+    // Print the adjacency matrix
+    public static void printGraph(int[][] graph) {
+        int numVertices = graph.length;
+
+        for (int i = 0; i < numVertices; i++) {
+            for (int j = 0; j < numVertices; j++) {
+                System.out.print(graph[i][j] + "  ");
+            }
+            System.out.println();
         }
     }
 }
 
+// below is an example edge list graph with no negative weight cycles.
 //    static final int[][] testgraph = {
 //            { 0, 1, 4 },
 //            { 0, 3, 3 },

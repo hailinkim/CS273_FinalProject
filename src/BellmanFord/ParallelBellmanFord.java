@@ -21,6 +21,8 @@ public class ParallelBellmanFord {
 
         public void run() {
             for (int edge = start; edge < end; edge++) {
+                // for every vertex edge[0] in this chunk of vertices from edge start to edge end,
+                // 
                 if (currentShortestDistance[graph[edge][0]] != Integer.MAX_VALUE &&
                         currentShortestDistance[graph[edge][0]] + graph[edge][2] < currentShortestDistance[graph[edge][1]]){
                     currentShortestDistance[graph[edge][1]] = currentShortestDistance[graph[edge][0]] + graph[edge][2];
@@ -30,10 +32,13 @@ public class ParallelBellmanFord {
     }
 
     public static void bellmanFordOptimized(int[] currentShortestDistance, int[][] graph, int numVertices, int numEdges, int u) {
+        //  the currentShortestDistance array will hold the shortest (least weighty) distance we've found from the source vertex u to all other vertices v.
+        // first, initialize currentShortestDistance array for all vertices to infinity (integer max)
         Arrays.fill(currentShortestDistance, 0, currentShortestDistance.length, Integer.MAX_VALUE);
+        // set currentShortestDistance array of u to 0, since the distance from u to u itself is 0.
         currentShortestDistance[u] = 0;
 
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        ExecutorService executorService = Executors.newSingleThreadExecutor(); // will change to multiple threads soon
         int step = numEdges / Runtime.getRuntime().availableProcessors();
 
         for (int i = 0; i < numVertices-1; i++) {
